@@ -27,7 +27,7 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       env:
-        SECRET_KEY: sdv78)*u-nm*q5!*i*xx-hnzddut8hmxbd=eh56vc2+jxq6*i
+        SECRET_KEY: django-insecure-23d#!p%ev7$u6g=cxh3hg8tvuunvk$qc(v4^(p+4l!q4$t_=59
         DATABASE_NAME: myapi
         DATABASE_USER: root
         DATABASE_PASSWORD: ''
