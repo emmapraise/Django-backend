@@ -26,5 +26,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Tests
+      env:
+        SECRET_KEY: sdv78)*u-nm*q5!*i*xx-hnzddut8hmxbd=eh56vc2+jxq6*i
+        DATABASE_NAME: myapi
+        DATABASE_USER: root
+        DATABASE_PASSWORD: ''
+        DATABASE_PORT: 0
+        DATABASE_HOST: ''
+        PAYSTACK_SECRET_KEY: ''
+        PAYSTACK_PUBLIC_KEY: ''
+        SENDGRID_API_KEY: ''
+        ENVIRONMENT: 'staging'
+        DEBUG: True
       run: |
         python manage.py test
