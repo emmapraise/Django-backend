@@ -26,7 +26,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 
 # ALLOWED_HOSTS = ['ideathinker-django.herokuapp.com', 'localhost']
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', '.herokuapp.com',]
 
 # Application definition
 
@@ -161,3 +161,4 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50
 }
 
+CORS_ALLOW_ALL_ORIGINS = True
