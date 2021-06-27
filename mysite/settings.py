@@ -80,7 +80,8 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        # 'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'STORAGE_ENGINE': 'InnoDB',
         'NAME': config('DATABASE_NAME'),
         'USER': config('DATABASE_USER'),
