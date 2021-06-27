@@ -13,6 +13,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows all users to be viewed or edited.
+
+    Available  Endpoint
+    register: https://ideathinker-django.herokuapp.com/register
+    Login: https://ideathinker-django.herokuapp.com/login
+    Logout: https://ideathinker-django.herokuapp.com/logout
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
