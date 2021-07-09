@@ -1,3 +1,5 @@
+from myapi.serializers import *
+from myapi.models import *
 from myapi.serializers import UserSerializer
 from myapi.models import User
 from django.db import IntegrityError
@@ -52,3 +54,17 @@ class LogoutView(APIView):
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    """API endpoint for category"""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = []
+
+class ProductViewSet(viewsets.ModelViewSet):
+    """API endpoint for category"""
+
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = []

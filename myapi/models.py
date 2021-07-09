@@ -47,7 +47,12 @@ class User(AbstractUser):
     phone = models.CharField( max_length=25,
                                    blank=True)                                 
     email = models.EmailField(unique=True)
-    avatar = models.ImageField()
+    avatar = models.ImageField(null = True, blank = True)
+    residential_address = models.TextField(blank=True, null = True)
+    country = models.CharField(max_length=20, blank=True, null=True)
+    twitter_url = models.URLField(blank=True, null=True)
+    facebook_url = models.URLField(blank=True, null=True)
+    instagram_url = models.URLField(blank=True, null=True)
 
 
     USERNAME_FIELD = 'email'
@@ -55,3 +60,23 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+class Category(models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self) -> str:
+        return self.name
+
+class Product(models.Model):
+    name = models.CharField(max_length=255)
+    price = models.DecimalField(decimal_places=2, max_digits=10)
+    category = models.ForeignKey(to='Category', on_delete=models.CASCADE, blank=True, null=True)
+    banner = models.ImageField()
+    description = models.TextField()
+    is_featured = models.BooleanField(default=False)
+    on_flash_sale = models.BooleanField(default=False)
+    pictures = models.URLField()
+    createat = models.DateTimeField(auto_now_add=True)
+    updateat = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name

@@ -5,7 +5,8 @@ from rest_framework_simplejwt import views as jwt_views
 
 router = routers.DefaultRouter()
 router.register(r'register', views.UserViewSet)
-
+router.register(r'category', views.CategoryViewSet)
+router.register(r'product', views.ProductViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

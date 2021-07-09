@@ -1,3 +1,4 @@
+from myapi.models import Category, Product
 from rest_framework import serializers
 
 from myapi.models import User
@@ -29,3 +30,15 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
         )
         return user
+
+class CategorySerializer(serializers.ModelSerializer):
+    """A serializers for all actions on Category"""
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+class ProductSerializer(serializers.ModelSerializer):
+    """A serializer for all actions on product"""
+    class Meta:
+        model = Product
+        fields = '__all__'
