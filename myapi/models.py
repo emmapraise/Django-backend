@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from mysite.enums.payments import withdrawal_status, payment_status, \
+    transaction_types
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -69,14 +71,94 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=255)
     price = models.DecimalField(decimal_places=2, max_digits=10)
+    promo_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     category = models.ForeignKey(to='Category', on_delete=models.CASCADE, blank=True, null=True)
     banner = models.ImageField()
     description = models.TextField()
+    specifications = models.TextField(blank=True, null = True)
     is_featured = models.BooleanField(default=False)
     on_flash_sale = models.BooleanField(default=False)
+    quanity_left = models.IntegerField(default = 10)
+    total_quanity = models.IntegerField(default = 50)
     pictures = models.URLField()
     createat = models.DateTimeField(auto_now_add=True)
     updateat = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+class Shipping(models.Model):
+    client = models.ForeignKey(to = 'User', on_delete= models.CASCADE)
+    name = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=20)
+    country = models.CharField(max_length= 20)
+    sate = models.CharField(max_length=20)
+    street_address = models.TextField()
+    email = models.EmailField()
+    additional_info = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.client} shipped to {self.name}'
+
+class Cart(models.Model):
+    client = models.ForeignKey(to= 'User', on_delete=models.CASCADE)
+    product = models.ForeignKey(to='Product', on_delete=models.DO_NOTHING)
+    quantity = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.client} cart {self.product}'
+
+class Saved(models.Model):
+    client = models.ForeignKey(to= 'User', on_delete=models.CASCADE)
+    product = models.ForeignKey(to='Product', on_delete=models.DO_NOTHING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.client} saved {self.product}'
+
+class Payment(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.DO_NOTHING)
+    description = models.TextField(blank=True, null=True)
+    amount = models.FloatField()
+    payment_mode = models.CharField(max_length=18, blank=True, null=True)
+    reference = models.CharField(max_length=100, blank=True, null=True)
+    evidence = models.ImageField(blank=True, null=True)
+    status = models.IntegerField(choices=payment_status(), default=0)
+    is_receipt_sent = models.BooleanField(default=False)
+    payment_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    updateat = models.DateTimeField(auto_now=True, blank= True, null=True)
+
+    def __str__(self):
+        return f'[{self.payment_date}] {self.status} - {self.client} paid' \
+               f' {self.amount}'
+
+class Sales(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.PROTECT)
+    product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
+    total_price = models.FloatField(default=0)
+    amount_paid = models.FloatField(default=0)
+    discount_voucher = models.ForeignKey(to='DiscountVoucher',
+                                         on_delete=models.PROTECT, null=True,
+                                         blank=True)
+    install_months = models.IntegerField(default=0)
+    next_payment_date = models.DateField(blank=True, null=True)
+    is_commission_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'({self.client}) {self.product}'
+
+class DiscountVoucher(models.Model):
+    code = models.CharField(max_length=10)
+    amount = models.FloatField()
+    is_used = models.BooleanField(default=False)
+    # created_by = models.ForeignKey(to='Admin', on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f'{self.code} ({self.amount})'

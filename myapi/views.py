@@ -3,14 +3,25 @@ from myapi.models import *
 from myapi.serializers import UserSerializer
 from myapi.models import User
 from django.db import IntegrityError
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from paystackapi.customer import Customer
+from paystackapi.misc import Misc
+from paystackapi.paystack import Paystack
+from paystackapi.transaction import Transaction
+from paystackapi.transfer import Transfer
+from paystackapi.trecipient import TransferRecipient
+
+from django.conf import settings
 # Create your views here.
+paystack_secret_key = settings.PAYSTACK_SECRET_KEY
+paystack = Paystack(secret_key=paystack_secret_key)
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -68,3 +79,74 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = []
+
+    @action(detail=True, methods=['post'])
+    def buy(self, request):
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            amount = json .dumps(
+                float(serializer.validated_data['amount']) * 100)
+            email = request.user.email
+            response = Transaction.initialize(amount=amount,
+                                              email=email)
+
+            payment = Payment.objects.create(
+                amount=serializer.validated_data['amount'],
+                reference=response['data']['reference'],
+            )
+            payment.save()
+            return redirect(response['data']['authorization_url'])
+        
+
+
+class SaleViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows purchases to be viewed or edited.
+    """
+    queryset = Sales.objects.all()
+    serializer_class = SaleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class CartViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for all actions on Cart
+    """
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ShippingViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for all actions on shipping
+    """
+
+    queryset = Shipping.objects.all()
+    serializer_class = ShippingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class SavedViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for all actions on saved product
+    """
+    queryset = Saved.objects.all()
+    serializer_class = SavedSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    """ API endpoint for actions on payment """
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # @action(detail=False, methods=['post'])
+    # def receive_event(self, request):
+    #     """ Webook to recieve payment event """
+    #     response_data = ''
+    #     data = request.data
+    #     if data['event'] == 'charge.success':
+    #         response_data = transaction_success(data['data'])
+    #     elif data['event'] == 'transfer.failed':
+    #         response_data = transfer_failed(data['data'])
+    #     elif data['event'] == 'transfer.success':
+    #         response_data = transfer_success(data['data'])
+    #     return Response(status=status.HTTP_200_OK, data=response_data)
