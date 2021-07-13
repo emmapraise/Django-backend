@@ -1,4 +1,4 @@
-from myapi.models import Category, Product
+from myapi.models import *
 from rest_framework import serializers
 
 from myapi.models import User
@@ -41,4 +41,29 @@ class ProductSerializer(serializers.ModelSerializer):
     """A serializer for all actions on product"""
     class Meta:
         model = Product
+        fields = '__all__'
+
+class SaleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sales
+        fileds = '__all__'
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'
+
+class ShippingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shipping
+        fields = '__all__'
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = '__all__'
+
+class SavedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Saved
         fields = '__all__'
