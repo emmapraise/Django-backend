@@ -1,3 +1,4 @@
+import json
 from myapi.serializers import *
 from myapi.models import *
 from myapi.serializers import UserSerializer
@@ -80,23 +81,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = []
 
-    @action(detail=True, methods=['post'])
-    def buy(self, request):
-        serializer = ProductSerializer(data=request.data)
-        if serializer.is_valid():
-            amount = json .dumps(
-                float(serializer.validated_data['amount']) * 100)
-            email = request.user.email
-            response = Transaction.initialize(amount=amount,
-                                              email=email)
-
-            payment = Payment.objects.create(
-                amount=serializer.validated_data['amount'],
-                reference=response['data']['reference'],
-            )
-            payment.save()
-            return redirect(response['data']['authorization_url'])
-        
 
 
 class SaleViewSet(viewsets.ModelViewSet):
@@ -106,6 +90,39 @@ class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sales.objects.all()
     serializer_class = SaleSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def outright_payment(self, request):
+        serializer = SaleSerializer(data=request.data)
+        if serializer.is_valid():
+            amount =  json.dumps(
+                float(serializer.validated_data['price']) * 100)
+            email = request.user.email
+
+            sale = Sales.objects.create(
+                client_id = request.user.id,
+                product = serializer.validated_data['product'],
+                price = serializer.validated_data['price'],
+            )
+            
+            sale.save()
+
+            response = Transaction.initialize(amount=amount, email=email)
+
+            payment = Payment.objects.create(
+                client_id = request.user.id,
+                sale_id = sale.id,
+                amount=serializer.validated_data['price'],
+                reference=response['data']['reference'],
+            )
+            payment.save()
+
+            
+            return redirect(response['data']['authorization_url'])
+    
+    # @action(detail= False, method= ['POST'])
+    # def installment_payment(self, request):
+
 
 class CartViewSet(viewsets.ModelViewSet):
     """
@@ -119,7 +136,6 @@ class ShippingViewSet(viewsets.ModelViewSet):
     """
     API endpoint for all actions on shipping
     """
-
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -150,3 +166,13 @@ class PaymentViewSet(viewsets.ModelViewSet):
     #     elif data['event'] == 'transfer.success':
     #         response_data = transfer_success(data['data'])
     #     return Response(status=status.HTTP_200_OK, data=response_data)
+
+    @action(detail=False, methods=['GET'])
+    def verify_payment(self, request):
+        """GET method to verify payment """
+        ref = request.GET['reference']
+        response = Transaction.verify(reference=ref)
+        if response['data']['status'] == 'success':
+            Payment.objects.filter(
+                reference=response['data']['reference']).update(status=1)
+        return Response(response, status=status.HTTP_200_OK)

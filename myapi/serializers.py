@@ -46,7 +46,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class SaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
-        fileds = '__all__'
+        fields = '__all__'
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,4 +66,9 @@ class CartSerializer(serializers.ModelSerializer):
 class SavedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Saved
+        fields = '__all__'
+
+class Installmental_salesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Installmental_sales
         fields = '__all__'
