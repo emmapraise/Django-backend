@@ -3,6 +3,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from mysite.enums.payments import withdrawal_status, payment_status, \
     transaction_types
+from mysite.enums.sales import sale_status, installment_status
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -65,7 +66,7 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(max_length=30)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.name
 
 class Product(models.Model):
@@ -76,8 +77,9 @@ class Product(models.Model):
     banner = models.ImageField()
     description = models.TextField()
     specifications = models.TextField(blank=True, null = True)
-    is_featured = models.BooleanField(default=False)
-    on_flash_sale = models.BooleanField(default=False)
+    top_deal = models.BooleanField(default=False)
+    deal_of_today = models.BooleanField(default=False)
+    hot_deal = models.BooleanField(default=False)
     quanity_left = models.IntegerField(default = 10)
     total_quanity = models.IntegerField(default = 50)
     pictures = models.URLField()
@@ -129,7 +131,7 @@ class Payment(models.Model):
     reference = models.CharField(max_length=100, blank=True, null=True)
     evidence = models.ImageField(blank=True, null=True)
     status = models.IntegerField(choices=payment_status(), default=0)
-    is_receipt_sent = models.BooleanField(default=False)
+    sale = models.ForeignKey(to='Sales', on_delete=models.DO_NOTHING, blank=True, null=True)
     payment_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     updateat = models.DateTimeField(auto_now=True, blank= True, null=True)
 
@@ -140,19 +142,27 @@ class Payment(models.Model):
 class Sales(models.Model):
     client = models.ForeignKey(to='User', on_delete=models.PROTECT)
     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
-    total_price = models.FloatField(default=0)
-    amount_paid = models.FloatField(default=0)
-    discount_voucher = models.ForeignKey(to='DiscountVoucher',
-                                         on_delete=models.PROTECT, null=True,
+    price = models.FloatField(default=0)
+    discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
                                          blank=True)
-    install_months = models.IntegerField(default=0)
-    next_payment_date = models.DateField(blank=True, null=True)
-    is_commission_approved = models.BooleanField(default=False)
+    # is_commission_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'({self.client}) {self.product}'
+
+class Installmental_sales(models.Model):
+    sale = models.ForeignKey(to='Sales', on_delete=models.CASCADE)
+    amount_paid = models.FloatField(default=0)
+    install_months = models.IntegerField(default=0)
+    next_payment_date = models.DateField(blank=True, null=True)
+    status = models.IntegerField(choices=installment_status(), default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'({self.sale}) amount paid ({self.amount_paid}) next payment date {self.next_payment_date}'
 
 class DiscountVoucher(models.Model):
     code = models.CharField(max_length=10)
