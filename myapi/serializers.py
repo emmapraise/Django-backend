@@ -68,7 +68,7 @@ class SavedSerializer(serializers.ModelSerializer):
         model = Saved
         fields = '__all__'
 
-class Installmental_salesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Installmental_sales
-        fields = '__all__'
+# class Installmental_salesSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Installmental_sales
+#         fields = '__all__'

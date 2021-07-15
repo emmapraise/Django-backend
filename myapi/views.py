@@ -91,8 +91,7 @@ class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SaleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=False, methods=['post'])
-    def outright_payment(self, request):
+    def create(self, request):
         serializer = SaleSerializer(data=request.data)
         if serializer.is_valid():
             amount =  json.dumps(
@@ -120,8 +119,41 @@ class SaleViewSet(viewsets.ModelViewSet):
             
             return redirect(response['data']['authorization_url'])
     
-    # @action(detail= False, method= ['POST'])
-    # def installment_payment(self, request):
+# class Installmental_SaleViewSet(viewsets.ModelViewSet):
+#     """
+#     API endpoint for all installmental sales 
+#     """
+#     queryset = Installmental_sales
+#     serializer_class = Installmental_salesSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def create(self, request):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             amount =  json.dumps(
+#                 float(serializer.validated_data['price']) * 100)
+#             email = request.user.email
+
+#             sale = Sales.objects.create(
+#                 client_id = request.user.id,
+#                 product = serializer.validated_data['product'],
+#                 price = serializer.validated_data['price'],
+#             )
+            
+#             sale.save()
+
+#             response = Transaction.initialize(amount=amount, email=email)
+
+#             payment = Payment.objects.create(
+#                 client_id = request.user.id,
+#                 sale_id = sale.id,
+#                 amount=serializer.validated_data['price'],
+#                 reference=response['data']['reference'],
+#             )
+#             payment.save()
+
+            
+#             return redirect(response['data']['authorization_url'])
 
 
 class CartViewSet(viewsets.ModelViewSet):
@@ -175,4 +207,20 @@ class PaymentViewSet(viewsets.ModelViewSet):
         if response['data']['status'] == 'success':
             Payment.objects.filter(
                 reference=response['data']['reference']).update(status=1)
+            authcard = AuthCard.objects.create(
+                client_id = request.user.id,
+                authorization_code = response['data']['authorization']['authorization_code'],
+                card_type = response['data']['authorization']['card_type'],
+                last4 = response['data']['authorization']['last4'],
+                exp_month = response['data']['authorization']['exp_month'],
+                exp_year = response['data']['authorization']['exp_year'],
+                bin = response['data']['authorization']['bin'],
+                bank = response['data']['authorization']['bank'],
+                channel = response['data']['authorization']['channel'],
+                signature = response['data']['authorization']['signature'],
+                is_reusable = response['data']['authorization']['reusable'],
+                country_code = response['data']['authorization']['country_code'],
+                account_name = response['data']['authorization']['account_name'], 
+            )
+            authcard.save()
         return Response(response, status=status.HTTP_200_OK)
