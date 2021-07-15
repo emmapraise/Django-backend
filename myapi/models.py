@@ -63,6 +63,24 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+class AuthCard(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.CASCADE)
+    authorization_code = models.CharField(max_length=30)
+    card_type = models.CharField(max_length=30)
+    last4 = models.IntegerField()
+    exp_month = models.CharField(max_length=2)
+    exp_year = models.CharField(max_length=4)
+    bin = models.CharField(max_length=30)
+    bank = models.CharField(max_length=30)
+    channel = models.CharField(max_length=30)
+    signature = models.CharField(max_length=30)
+    is_reusable = models.BooleanField(default=False)
+    country_code = models.CharField(max_length=30)
+    account_name = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self):
+        return self.account_name
+
 class Category(models.Model):
     name = models.CharField(max_length=30)
 
@@ -106,7 +124,7 @@ class Shipping(models.Model):
 
 class Cart(models.Model):
     client = models.ForeignKey(to= 'User', on_delete=models.CASCADE)
-    product = models.ForeignKey(to='Product', on_delete=models.DO_NOTHING)
+    product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -116,7 +134,7 @@ class Cart(models.Model):
 
 class Saved(models.Model):
     client = models.ForeignKey(to= 'User', on_delete=models.CASCADE)
-    product = models.ForeignKey(to='Product', on_delete=models.DO_NOTHING)
+    product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -152,17 +170,20 @@ class Sales(models.Model):
     def __str__(self):
         return f'({self.client}) {self.product}'
 
-class Installmental_sales(models.Model):
-    sale = models.ForeignKey(to='Sales', on_delete=models.CASCADE)
-    amount_paid = models.FloatField(default=0)
-    install_months = models.IntegerField(default=0)
-    next_payment_date = models.DateField(blank=True, null=True)
-    status = models.IntegerField(choices=installment_status(), default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+# class Installmental_sales(models.Model):
+#     # sales = models.OneToOneField(to='Sales', on_delete=models.CASCADE)
+#     client = models.ForeignKey(to='User', on_delete=models.PROTECT)
+#     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
+#     price = models.FloatField(default=0)
+#     amount_paid = models.FloatField(default=0)
+#     install_months = models.IntegerField(default=0)
+#     next_payment_date = models.DateField(blank=True, null=True)
+#     status = models.IntegerField(choices=installment_status(), default=0)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f'({self.sale}) amount paid ({self.amount_paid}) next payment date {self.next_payment_date}'
+#     def __str__(self):
+#         return f'({self.sale}) amount paid ({self.amount_paid}) next payment date {self.next_payment_date}'
 
 class DiscountVoucher(models.Model):
     code = models.CharField(max_length=10)
