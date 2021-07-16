@@ -51,7 +51,8 @@ class SaleSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = '__all__'
+        exclude = ['status', 'reference', 'payment_mode']
+
 
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:

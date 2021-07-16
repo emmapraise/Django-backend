@@ -19,6 +19,7 @@ from paystackapi.transaction import Transaction
 from paystackapi.transfer import Transfer
 from paystackapi.trecipient import TransferRecipient
 
+from mysite.enums import payments
 from django.conf import settings
 # Create your views here.
 paystack_secret_key = settings.PAYSTACK_SECRET_KEY
@@ -110,13 +111,11 @@ class SaleViewSet(viewsets.ModelViewSet):
 
             payment = Payment.objects.create(
                 client_id = request.user.id,
-                sale_id = sale.id,
+                type = payments.OUTRIGHT,
                 amount=serializer.validated_data['price'],
                 reference=response['data']['reference'],
             )
             payment.save()
-
-            
             return redirect(response['data']['authorization_url'])
     
 # class Installmental_SaleViewSet(viewsets.ModelViewSet):
@@ -186,6 +185,27 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail = False, methods = ['POST'])
+    def topup(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            amount =  json.dumps(
+                float(serializer.validated_data['amount']) * 100)
+            email = request.user.email
+
+            response = Transaction.initialize(amount=amount, email=email)
+
+            payment = Payment.objects.create(
+                client_id = request.user.id,
+                type = payments.TOUPUP,
+                amount =serializer.validated_data['amount'],
+                reference=response['data']['reference'],
+            )
+            payment.save()
+
+            
+            return redirect(response['data']['authorization_url'])
+
     # @action(detail=False, methods=['post'])
     # def receive_event(self, request):
     #     """ Webook to recieve payment event """
@@ -205,8 +225,15 @@ class PaymentViewSet(viewsets.ModelViewSet):
         ref = request.GET['reference']
         response = Transaction.verify(reference=ref)
         if response['data']['status'] == 'success':
-            Payment.objects.filter(
-                reference=response['data']['reference']).update(status=1)
+            pay = Payment.objects.get(
+                reference=response['data']['reference'])
+            pay.status= payments.APPROVED
+            pay.save()
+
+            if pay.type == payments.TOUPUP:
+                user = User.objects.get(id = request.user.id)
+                user.wallet_balance = user.wallet_balance + (response['data']['amount'] / 100)
+                user.save()
             authcard = AuthCard.objects.create(
                 client_id = request.user.id,
                 authorization_code = response['data']['authorization']['authorization_code'],
