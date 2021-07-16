@@ -179,6 +179,14 @@ class SavedViewSet(viewsets.ModelViewSet):
     serializer_class = SavedSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+class MessagesViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for all actions on saved product
+    """
+    queryset = Messages.objects.all()
+    serializer_class = MessagesSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 class PaymentViewSet(viewsets.ModelViewSet):
     """ API endpoint for actions on payment """
     queryset = Payment.objects.all()

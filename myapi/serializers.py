@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ['is_active', 'is_staff', 'is_superuser',
-                   'date_joined', 'last_login', 'groups', 'user_permissions']
+                   'date_joined', 'last_login', 'groups', 'user_permissions', 'wallet_balance']
 
     def create(self, validated_data):
         # Generates user_code and creates new User object.
@@ -46,27 +46,35 @@ class ProductSerializer(serializers.ModelSerializer):
 class SaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
-        fields = '__all__'
+        exclude = ['client']
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        exclude = ['status', 'reference', 'payment_mode']
+        exclude = ['status', 'reference', 'payment_mode', 'client']
 
 
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
-        fields = '__all__'
+        exclude = ['client']
 
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = '__all__'
+        exclude = ['client']
 
 class SavedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Saved
+        exclude = ['client']
+
+class MessagesSerializer(serializers.ModelSerializer):
+    """
+    Model Serializer for Messages sent to the client from the Admin
+    """
+    class Meta:
+        model = Messages
         fields = '__all__'
 
 # class Installmental_salesSerializer(serializers.ModelSerializer):

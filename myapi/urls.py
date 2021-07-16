@@ -12,7 +12,7 @@ router.register(r'saved', views.SavedViewSet)
 router.register(r'cart', views.CartViewSet)
 router.register(r'sale', views.SaleViewSet)
 router.register(r'payment', views.PaymentViewSet)
-
+router.register(r'messages', views.MessagesViewSet)
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
