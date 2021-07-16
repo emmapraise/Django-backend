@@ -12,6 +12,11 @@ DISBURSED = 2
 VERIFIED = 2
 REMITTED = 3
 
+#Payment Type
+OUTRIGHT = 'Outright Sale'
+INSTALLMENT = 'Installmental Sale'
+TOUPUP = 'Topup'
+
 # transaction type values
 CREDIT = 'CR'
 DEBIT = 'DT'
@@ -25,6 +30,14 @@ def transaction_types():
 
     return types
 
+def payment_types():
+    types = [
+        (OUTRIGHT, _('Outright Sale')),
+        (INSTALLMENT, _('Installmental Sale')),
+        (TOUPUP, _('Topup'))
+    ]
+
+    return types
 
 def payment_status():
     status = [

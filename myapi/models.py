@@ -1,7 +1,8 @@
+from mysite.enums import payments
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from mysite.enums.payments import withdrawal_status, payment_status, \
+from mysite.enums.payments import payment_types, payment_status, \
     transaction_types
 from mysite.enums.sales import sale_status, installment_status
 
@@ -51,6 +52,7 @@ class User(AbstractUser):
                                    blank=True)                                 
     email = models.EmailField(unique=True)
     avatar = models.ImageField(null = True, blank = True)
+    wallet_balance = models.IntegerField(default=0, blank=True, null=True)
     residential_address = models.TextField(blank=True, null = True)
     country = models.CharField(max_length=20, blank=True, null=True)
     twitter_url = models.URLField(blank=True, null=True)
@@ -148,8 +150,8 @@ class Payment(models.Model):
     payment_mode = models.CharField(max_length=18, blank=True, null=True)
     reference = models.CharField(max_length=100, blank=True, null=True)
     evidence = models.ImageField(blank=True, null=True)
-    status = models.IntegerField(choices=payment_status(), default=0)
-    sale = models.ForeignKey(to='Sales', on_delete=models.DO_NOTHING, blank=True, null=True)
+    status = models.IntegerField(choices=payment_status(), default=payments.PENDING)
+    type = models.CharField(blank=True, null=True, max_length=30, choices=payment_types())
     payment_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     updateat = models.DateTimeField(auto_now=True, blank= True, null=True)
 
