@@ -19,6 +19,7 @@ from paystackapi.transaction import Transaction
 from paystackapi.transfer import Transfer
 from paystackapi.trecipient import TransferRecipient
 
+from mysite.helpers.paystack import resolve_account
 from mysite.enums import payments
 from django.conf import settings
 # Create your views here.
@@ -30,9 +31,9 @@ class UserViewSet(viewsets.ModelViewSet):
     API endpoint that allows all users to be viewed or edited.
 
     Available  Endpoint
-    register: https://ideathinker-django.herokuapp.com/register
-    Login: https://ideathinker-django.herokuapp.com/login
-    Logout: https://ideathinker-django.herokuapp.com/logout
+    register: https://etsea.herokuapp.com/register/
+    Login: https://etsea.herokuapp.com/login
+    Logout: https://etsea.herokuapp.com/logout
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -81,8 +82,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = []
-
-
 
 class SaleViewSet(viewsets.ModelViewSet):
     """
@@ -259,3 +258,116 @@ class PaymentViewSet(viewsets.ModelViewSet):
             )
             authcard.save()
         return Response(response, status=status.HTTP_200_OK)
+
+class BankAccountViewSet(viewsets.ModelViewSet):
+    """
+        Viewset for adding Bank account
+    """
+    queryset = BankAccount.objects.all()
+    serializer_class = BankAccountSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            bank_name = serializer.validated_data['bank']
+            account_number = serializer.validated_data['account_number']
+            bank_code = Bank.objects.get(bank_name = bank_name).bank_code
+            
+            response = resolve_account(paystack_secret_key, account_number, bank_code)
+            account = BankAccount.objects.create(
+                client_id = request.user.id,
+                bank = bank_name,
+                account_number = account_number,
+                account_name = response['data']['account_name']
+            )
+            account.save()
+
+            print(response['data']['account_name'])
+
+            return Response(response['data'])
+
+class BankViewSet(viewsets.ModelViewSet):
+    """API endpoint for action on Bank """
+    queryset = Bank.objects.all()
+    serializer_class = BankSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ListOfBankAPIView(APIView):
+    """
+        Get the list of Banks and the Bank Code
+    """
+
+    def get(self, request):
+        """GET Method for list of Banks """
+        response = Misc.list_banks()
+        for i in range(0, len(response['data'])):
+            bank = Bank.objects.create(
+                bank_name=response['data'][i]['name'],
+                bank_code=response['data'][i]['code'])
+            bank.save()
+        return Response(data=response, status=status.HTTP_200_OK)
+
+class WithdrawalViewSet(viewsets.ModelViewSet):
+    """API View for actions on Withdrawal """
+    queryset = Withdrawal.objects.all()
+    serializer_class = WithdrawalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request):
+        """POST method for Withdrawal """
+        serializer = WithdrawalSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = User.objects.get(id = request.user.id)
+            if user.wallet_balance >= serializer.validated_data['amount']:
+
+                amount = json.dumps(
+                    int(serializer.validated_data['amount']) * 100)
+                account = serializer.validated_data['account']
+                reason = serializer.validated_data['description']
+                account_details = BankAccount.objects.get(account_number = account)
+                bank_code = Bank.objects.get(bank_name=account_details.bank).bank_code
+                
+
+                # # Verify and Create Transfer for Customers
+                trans_rep = TransferRecipient.create(
+                    type="nuban",
+                    name=account_details.account_name,
+                    description= reason,
+                    account_number=account_details.account_number,
+                    bank_code=bank_code)
+
+                if trans_rep['status']:
+                    response = Transfer.initiate(source="balance", 
+                    reason=reason,
+                    amount=amount,
+                    recipient=trans_rep['data']['recipient_code'])
+
+                    withdraw = Withdrawal.objects.create(
+                        amount=serializer.validated_data['amount'],
+                        description=reason,
+                        recipient_code=trans_rep['data']['recipient_code'],
+                        account = serializer.validated_data['account'],
+                        client_id = request.user.id,
+                        # reference = response['data']['reference']
+                    )
+                    withdraw.save()
+                #     wallet = Wallet.objects.filter(
+                #         client=request.user.client.id)
+                #     wallet.balance = wallet.balance - serializer.validated_data[
+                #         'amount']
+                #     wallet.save()
+
+            return Response(status=status.HTTP_200_OK,
+                            data=response)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
+        # wallet = WalletTransaction.objects.create(
+        #     amount=serializer.validated_data['amount'],
+        #     reference=response['data']['reference'],
+        #     type=serializer.validated_data['type'],
+        #     )
+        # wallet.save()
+
+

@@ -53,7 +53,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         exclude = ['status', 'reference', 'payment_mode', 'client']
 
-
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
@@ -81,3 +80,24 @@ class MessagesSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = Installmental_sales
 #         fields = '__all__'
+
+class BankAccountSerializer(serializers.ModelSerializer):
+    """ A serializer for action on Bank Account """
+
+    class Meta:
+        model = BankAccount
+        exclude = ['client']
+
+class BankSerializer(serializers.ModelSerializer):
+    """ A serializer for action on Bank Account """
+
+    class Meta:
+        model = Bank
+        fields = '__all__'
+
+class WithdrawalSerializer(serializers.ModelSerializer):
+    """A serializer for action on Withdrawal """
+
+    class Meta:
+        model = Withdrawal
+        exclude = ['client', 'status']
