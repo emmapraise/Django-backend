@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from mysite.enums.payments import payment_types, payment_status, \
-    transaction_types
+    withdrawal_status
 from mysite.enums.sales import sale_status, installment_status
 
 # Create your models here.
@@ -39,7 +39,6 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self._create_user(email, password, **extra_fields)
-
 
 class User(AbstractUser):
     """This represents a User object within our system"""
@@ -206,3 +205,53 @@ class DiscountVoucher(models.Model):
 
     def __str__(self):
         return f'{self.code} ({self.amount})'
+
+# class Payout(models.Model):
+#     realtor = models.ForeignKey('Realtor', models.DO_NOTHING)
+#     amount = models.DecimalField(max_digits=10, decimal_places=0)
+#     payment_status = models.CharField(max_length=10)
+#     bank_account = models.ForeignKey(to='BankAccount',
+#                                      on_delete=models.DO_NOTHING)
+#     reference = models.CharField(max_length=50, blank=True, null=True)
+#     remarks = models.CharField(max_length=200, blank=True, null=True)
+#     payment_time = models.DateTimeField(blank=True, null=True)
+#     recipient_code = models.CharField(max_length=100, blank=True, null=True)
+#     transfer_code = models.CharField(max_length=100, blank=True, null=True)
+#     payment_charges = models.DecimalField(max_digits=10, decimal_places=0)
+
+#     class Meta:
+#         db_table = 'payouts'
+
+#     def __str__(self):
+#         return self.amount
+
+class Withdrawal(models.Model):
+    recipient_code = models.CharField(max_length=100, blank=True)
+    amount = models.IntegerField()
+    account = models.ForeignKey(to='BankAccount', on_delete=models.DO_NOTHING, null=True)
+    description = models.TextField(null=True)
+    client = models.ForeignKey(to='User', on_delete=models.DO_NOTHING)
+    status = models.SmallIntegerField(default=payments.PENDING,
+                                      choices=withdrawal_status())
+    reference = models.CharField(max_length=30, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.account_number} ({self.amount})'
+
+class Bank(models.Model):
+    bank_name = models.CharField(max_length=50, unique=True)
+    bank_code = models.CharField(max_length=11, unique=True)
+
+    def __str__(self):
+        return self.bank_name
+
+class BankAccount(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.DO_NOTHING)
+    bank = models.ForeignKey(to='Bank', on_delete=models.PROTECT)
+    account_number = models.CharField(max_length=20, unique=True)
+    account_name = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.account_number}'

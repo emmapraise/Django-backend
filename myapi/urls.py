@@ -13,6 +13,9 @@ router.register(r'cart', views.CartViewSet)
 router.register(r'sale', views.SaleViewSet)
 router.register(r'payment', views.PaymentViewSet)
 router.register(r'messages', views.MessagesViewSet)
+router.register(r'banks', views.BankAccountViewSet)
+router.register(r'banks-details', views.BankViewSet)
+router.register(r'withdraw', views.WithdrawalViewSet)
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
@@ -22,5 +25,6 @@ urlpatterns = [
     path('login/refresh/', jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
     path('logout/', views.LogoutView.as_view(), name='auth_logout'),
+    path(r'list_bank', views.ListOfBankAPIView.as_view()),
     # path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
