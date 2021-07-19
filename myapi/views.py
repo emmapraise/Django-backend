@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 from myapi.serializers import *
 from myapi.models import *
 from myapi.serializers import UserSerializer
@@ -83,76 +84,56 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = []
 
-class SaleViewSet(viewsets.ModelViewSet):
+class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
     """
     API endpoint that allows purchases to be viewed or edited.
     """
-    queryset = Sales.objects.all()
-    serializer_class = SaleSerializer
+    queryset = Sale.objects.all()
+    read_serializer_class = ReadSaleSerializer
+    write_serializer_class = WriteSaleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def create(self, request):
-        serializer = SaleSerializer(data=request.data)
-        if serializer.is_valid():
-            amount =  json.dumps(
-                float(serializer.validated_data['price']) * 100)
-            email = request.user.email
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, args, **kwargs)
+        amount =  json.dumps(float(response.data['price']) * 100)
+        email = request.user.email
 
-            sale = Sales.objects.create(
-                client_id = request.user.id,
-                product = serializer.validated_data['product'],
-                price = serializer.validated_data['price'],
-            )
-            
-            sale.save()
+        resp = Transaction.initialize(amount=amount, email=email)
 
-            response = Transaction.initialize(amount=amount, email=email)
-
-            payment = Payment.objects.create(
-                client_id = request.user.id,
-                type = payments.OUTRIGHT,
-                amount=serializer.validated_data['price'],
-                reference=response['data']['reference'],
-            )
-            payment.save()
-            return redirect(response['data']['authorization_url'])
+        payment = Payment.objects.create(
+            client_id = request.user.id,
+            type = payments.OUTRIGHT,
+            amount=response.data['price'],
+            reference=resp['data']['reference'],
+        )
+        payment.save()
+        return redirect(resp['data']['authorization_url'])
     
-# class Installmental_SaleViewSet(viewsets.ModelViewSet):
-#     """
-#     API endpoint for all installmental sales 
-#     """
-#     queryset = Installmental_sales
-#     serializer_class = Installmental_salesSerializer
-#     permission_classes = [permissions.IsAuthenticated]
+class Installmental_SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
+    """
+    API endpoint for all installmental sales 
+    """
+    queryset = Installmental_sales.objects.all()
+    read_serializer_class = ReadInstallSalesSerializer
+    write_serializer_class = WriteInstallSalesSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-#     def create(self, request):
-#         serializer = self.get_serializer(data=request.data)
-#         if serializer.is_valid():
-#             amount =  json.dumps(
-#                 float(serializer.validated_data['price']) * 100)
-#             email = request.user.email
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        amount =  json.dumps(float(response.data['amount']) * 100)
+        email = request.user.email
 
-#             sale = Sales.objects.create(
-#                 client_id = request.user.id,
-#                 product = serializer.validated_data['product'],
-#                 price = serializer.validated_data['price'],
-#             )
-            
-#             sale.save()
+        resp = Transaction.initialize(amount=amount, email=email)
 
-#             response = Transaction.initialize(amount=amount, email=email)
-
-#             payment = Payment.objects.create(
-#                 client_id = request.user.id,
-#                 sale_id = sale.id,
-#                 amount=serializer.validated_data['price'],
-#                 reference=response['data']['reference'],
-#             )
-#             payment.save()
-
-            
-#             return redirect(response['data']['authorization_url'])
-
+        payment = Payment.objects.create(
+            client_id = request.user.id,
+            type = payments.INSTALLMENT,
+            install_sale_id =response.data['id'],
+            amount=response.data['amount'],
+            reference=resp['data']['reference'],
+        )
+        payment.save()
+        return redirect(resp['data']['authorization_url'])
 
 class CartViewSet(viewsets.ModelViewSet):
     """
@@ -241,22 +222,37 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 user = User.objects.get(id = request.user.id)
                 user.wallet_balance = user.wallet_balance + (response['data']['amount'] / 100)
                 user.save()
-            authcard = AuthCard.objects.create(
-                client_id = request.user.id,
-                authorization_code = response['data']['authorization']['authorization_code'],
-                card_type = response['data']['authorization']['card_type'],
-                last4 = response['data']['authorization']['last4'],
-                exp_month = response['data']['authorization']['exp_month'],
-                exp_year = response['data']['authorization']['exp_year'],
-                bin = response['data']['authorization']['bin'],
-                bank = response['data']['authorization']['bank'],
-                channel = response['data']['authorization']['channel'],
-                signature = response['data']['authorization']['signature'],
-                is_reusable = response['data']['authorization']['reusable'],
-                country_code = response['data']['authorization']['country_code'],
-                account_name = response['data']['authorization']['account_name'], 
-            )
-            authcard.save()
+
+            elif pay.type == payments.INSTALLMENT:
+                print(pay.install_sale)
+                in_sale = Installmental_sales.objects.get(id = pay.install_sale.id)
+                print(in_sale)
+                in_sale.install_limit = in_sale.install_limit -1
+                if in_sale.install_limit <= 0:
+                    in_sale.status = sales.COMPLETED
+                    in_sale.next_charge = ''
+                    in_sale.save()
+                else:
+                    in_sale.status = sales.PAYING
+                    in_sale.next_charge = (date.today() + timedelta(days= 30))
+                    in_sale.amount_paid = in_sale.amount_paid + in_sale.amount
+                    in_sale.save()
+                    authcard = AuthCard.objects.create(
+                        client_id = request.user.id,
+                        authorization_code = response['data']['authorization']['authorization_code'],
+                        card_type = response['data']['authorization']['card_type'],
+                        last4 = response['data']['authorization']['last4'],
+                        exp_month = response['data']['authorization']['exp_month'],
+                        exp_year = response['data']['authorization']['exp_year'],
+                        bin = response['data']['authorization']['bin'],
+                        bank = response['data']['authorization']['bank'],
+                        channel = response['data']['authorization']['channel'],
+                        signature = response['data']['authorization']['signature'],
+                        is_reusable = response['data']['authorization']['reusable'],
+                        country_code = response['data']['authorization']['country_code'],
+                        account_name = response['data']['authorization']['account_name'], 
+                    )
+                    authcard.save()
         return Response(response, status=status.HTTP_200_OK)
 
 class BankAccountViewSet(viewsets.ModelViewSet):
