@@ -1,10 +1,9 @@
-from mysite.enums import payments
+from mysite.enums import payments, sales
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from mysite.enums.payments import payment_types, payment_status, \
-    withdrawal_status
-from mysite.enums.sales import sale_status, installment_status
+from mysite.enums.payments import payment_types, payment_status, withdrawal_status
+from mysite.enums.sales import sale_status, installment_status, sale_types
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -43,16 +42,16 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     """This represents a User object within our system"""
 
-    first_name = models.CharField( max_length=25,
-                                  blank=True)
-    last_name = models.CharField( max_length=25, blank=True,
-                                 )
-    phone = models.CharField( max_length=25,
-                                   blank=True)                                 
+    first_name = models.CharField( max_length=25, blank=True)
+    last_name = models.CharField( max_length=25, blank=True,)
+    phone = models.CharField( max_length=25, blank=True)                                 
     email = models.EmailField(unique=True)
+    user_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
     avatar = models.ImageField(null = True, blank = True)
+    username = models.CharField(max_length=20, null=True, blank=True, unique=True)
     wallet_balance = models.IntegerField(default=0, blank=True, null=True)
     residential_address = models.TextField(blank=True, null = True)
+    referral = models.ForeignKey(to='User', null=True, blank=True, on_delete=models.SET_NULL, related_name='downline')
     country = models.CharField(max_length=20, blank=True, null=True)
     twitter_url = models.URLField(blank=True, null=True)
     facebook_url = models.URLField(blank=True, null=True)
@@ -63,6 +62,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    def __str__(self):
+        return self.get_full_name()
 
 class AuthCard(models.Model):
     client = models.ForeignKey(to='User', on_delete=models.CASCADE)
@@ -99,8 +101,7 @@ class Product(models.Model):
     top_deal = models.BooleanField(default=False)
     deal_of_today = models.BooleanField(default=False)
     hot_deal = models.BooleanField(default=False)
-    quanity_left = models.IntegerField(default = 10)
-    total_quanity = models.IntegerField(default = 50)
+    quanity = models.IntegerField(default = 50)
     pictures = models.URLField()
     createat = models.DateTimeField(auto_now_add=True)
     updateat = models.DateTimeField(auto_now=True)
@@ -151,6 +152,7 @@ class Payment(models.Model):
     evidence = models.ImageField(blank=True, null=True)
     status = models.IntegerField(choices=payment_status(), default=payments.PENDING)
     type = models.CharField(blank=True, null=True, max_length=30, choices=payment_types())
+    install_sale = models.ForeignKey(to='Installmental_sales', on_delete=models.CASCADE, blank=True, null=True)
     payment_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     updateat = models.DateTimeField(auto_now=True, blank= True, null=True)
 
@@ -158,19 +160,35 @@ class Payment(models.Model):
         return f'[{self.payment_date}] {self.status} - {self.client} paid' \
                f' {self.amount}'
 
-class Sales(models.Model):
+class Sale(models.Model):
     client = models.ForeignKey(to='User', on_delete=models.PROTECT)
     quantity = models.IntegerField(default=1)
     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
     price = models.FloatField(default=0)
     discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
                                          blank=True)
-    # is_commission_approved = models.BooleanField(default=False)
+    status = models.IntegerField(choices=sale_status(), default=sales.PENDING)
+    type = models.CharField(blank=True, null=True, max_length=30, choices=sale_types(), default=sales.OUTRIGHT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'({self.client}) {self.product}'
+
+class Installmental_sales(models.Model):
+    sale = models.OneToOneField(to='Sale', on_delete=models.CASCADE)
+    amount_paid = models.FloatField(default=0)
+    amount = models.FloatField(default=0)
+    is_commission_approved = models.BooleanField(default=False)
+    install_limit = models.IntegerField(default=0)
+    last_charge = models.DateField(auto_now=True)
+    next_charge = models.DateField(blank=True, null=True)
+    status = models.IntegerField(choices=installment_status(), default=sales.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'({self.sale}) amount paid ({self.amount_paid}) next payment date {self.next_charge}'
 
 class Messages(models.Model):
     client = models.ForeignKey(to='User', on_delete=models.DO_NOTHING, blank=True, null=True)
@@ -181,21 +199,6 @@ class Messages(models.Model):
 
     def __str__(self):
         return self.title
-
-# class Installmental_sales(models.Model):
-#     # sales = models.OneToOneField(to='Sales', on_delete=models.CASCADE)
-#     client = models.ForeignKey(to='User', on_delete=models.PROTECT)
-#     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
-#     price = models.FloatField(default=0)
-#     amount_paid = models.FloatField(default=0)
-#     install_months = models.IntegerField(default=0)
-#     next_payment_date = models.DateField(blank=True, null=True)
-#     status = models.IntegerField(choices=installment_status(), default=0)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f'({self.sale}) amount paid ({self.amount_paid}) next payment date {self.next_payment_date}'
 
 class DiscountVoucher(models.Model):
     code = models.CharField(max_length=10)
@@ -255,3 +258,11 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f'{self.account_number}'
+
+# class Refferal(models.Model):
+#     user = models.OneToOneField(to='User')
+#     upline = models.ForeignKey(to='User', null=True, on_delete=models.SET_NULL, related_name='downlines')
+#     ref_code = models.CharField(max_length=20, blank=True, null=True)
+
+#     def __str__(self):
+#         return self.ref_code
