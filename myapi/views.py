@@ -218,41 +218,52 @@ class PaymentViewSet(viewsets.ModelViewSet):
             pay.status= payments.APPROVED
             pay.save()
 
+            user = User.objects.get(id = request.user.id)
             if pay.type == payments.TOUPUP:
-                user = User.objects.get(id = request.user.id)
+                
                 user.wallet_balance = user.wallet_balance + (response['data']['amount'] / 100)
-                user.save()
+                
 
             elif pay.type == payments.INSTALLMENT:
-                print(pay.install_sale)
+
                 in_sale = Installmental_sales.objects.get(id = pay.install_sale.id)
-                print(in_sale)
                 in_sale.install_limit = in_sale.install_limit -1
                 if in_sale.install_limit <= 0:
                     in_sale.status = sales.COMPLETED
-                    in_sale.next_charge = ''
-                    in_sale.save()
+                    in_sale.amount_paid = in_sale.amount_paid + in_sale.amount
+                    in_sale.next_charge = None
+                    
                 else:
                     in_sale.status = sales.PAYING
                     in_sale.next_charge = (date.today() + timedelta(days= 30))
                     in_sale.amount_paid = in_sale.amount_paid + in_sale.amount
-                    in_sale.save()
-                    authcard = AuthCard.objects.create(
-                        client_id = request.user.id,
-                        authorization_code = response['data']['authorization']['authorization_code'],
-                        card_type = response['data']['authorization']['card_type'],
-                        last4 = response['data']['authorization']['last4'],
-                        exp_month = response['data']['authorization']['exp_month'],
-                        exp_year = response['data']['authorization']['exp_year'],
-                        bin = response['data']['authorization']['bin'],
-                        bank = response['data']['authorization']['bank'],
-                        channel = response['data']['authorization']['channel'],
-                        signature = response['data']['authorization']['signature'],
-                        is_reusable = response['data']['authorization']['reusable'],
-                        country_code = response['data']['authorization']['country_code'],
-                        account_name = response['data']['authorization']['account_name'], 
+                    
+                authcard = AuthCard.objects.create(
+                    client_id = request.user.id,
+                    authorization_code = response['data']['authorization']['authorization_code'],
+                    card_type = response['data']['authorization']['card_type'],
+                    last4 = response['data']['authorization']['last4'],
+                    exp_month = response['data']['authorization']['exp_month'],
+                    exp_year = response['data']['authorization']['exp_year'],
+                    bin = response['data']['authorization']['bin'],
+                    bank = response['data']['authorization']['bank'],
+                    channel = response['data']['authorization']['channel'],
+                    signature = response['data']['authorization']['signature'],
+                    is_reusable = response['data']['authorization']['reusable'],
+                    country_code = response['data']['authorization']['country_code'],
+                    account_name = response['data']['authorization']['account_name'], 
+                )
+                authcard.save()
+                in_sale.authorization = authcard
+                in_sale.save()
+
+                if user.referral != None:
+                    commission = Commission.objects.create(
+                        client = user.referral,
+                        amount = in_sale.amount * 0.25,
                     )
-                    authcard.save()
+                    commission.save()
+            user.save()
         return Response(response, status=status.HTTP_200_OK)
 
 class BankAccountViewSet(viewsets.ModelViewSet):
@@ -278,9 +289,6 @@ class BankAccountViewSet(viewsets.ModelViewSet):
                 account_name = response['data']['account_name']
             )
             account.save()
-
-            print(response['data']['account_name'])
-
             return Response(response['data'])
 
 class BankViewSet(viewsets.ModelViewSet):
@@ -366,4 +374,7 @@ class WithdrawalViewSet(viewsets.ModelViewSet):
         #     )
         # wallet.save()
 
-
+class CommissionViewSet(viewsets.ModelViewSet):
+    queryset = Commission.objects.all()
+    serializer_class = CommissionSerializer
+    permission_classes = [permissions.IsAuthenticated]

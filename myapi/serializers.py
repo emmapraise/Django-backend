@@ -85,7 +85,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
-class DiscountVoucherSerializer():
+class DiscountVoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountVoucher
         fields = '__all__'
@@ -110,7 +110,7 @@ class WriteSaleSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        exclude = ['status', 'reference', 'payment_mode', 'client']
+        exclude = ['status', 'reference', 'payment_mode', 'client', 'install_sale', 'type']
 
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -141,7 +141,7 @@ class WriteInstallSalesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Installmental_sales
-        exclude = ['next_charge', 'amount_paid', 'status']
+        exclude = ['next_charge', 'amount_paid', 'status', 'authorization']
 
     def create(self, validated_data,):
         request = self.context.get('request', None)
@@ -192,8 +192,17 @@ class BankAccountSerializer(serializers.ModelSerializer):
         exclude = ['client']
 
 class WithdrawalSerializer(serializers.ModelSerializer):
+
     """A serializer for action on Withdrawal """
 
     class Meta:
         model = Withdrawal
         exclude = ['client', 'status']
+
+class CommissionSerializer(serializers.ModelSerializer):
+    """
+    A Serializer for all actions on commissions 
+    """
+    class Meta:
+        model = Commission
+        fields = '__all__'

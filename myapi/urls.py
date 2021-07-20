@@ -17,6 +17,7 @@ router.register(r'banks-account', views.BankAccountViewSet)
 # router.register(r'banks-details', views.BankViewSet)
 router.register(r'withdraw', views.WithdrawalViewSet)
 router.register(r'installment', views.Installmental_SaleViewSet)
+router.register(r'commission', views.CommissionViewSet)
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [

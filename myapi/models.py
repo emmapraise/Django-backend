@@ -51,7 +51,7 @@ class User(AbstractUser):
     username = models.CharField(max_length=50, null=True, blank=True, unique=True)
     wallet_balance = models.IntegerField(default=0, blank=True, null=True)
     residential_address = models.TextField(blank=True, null = True)
-    referral = models.ForeignKey(to='User', null=True, blank=True, on_delete=models.SET_NULL, related_name='downline')
+    referral = models.ForeignKey(to='User', null=True, blank=True, on_delete=models.SET_NULL, related_name='downline', default=1)
     country = models.CharField(max_length=20, blank=True, null=True)
     twitter_url = models.URLField(blank=True, null=True)
     facebook_url = models.URLField(blank=True, null=True)
@@ -184,6 +184,7 @@ class Installmental_sales(models.Model):
     last_charge = models.DateField(auto_now=True)
     next_charge = models.DateField(blank=True, null=True)
     status = models.IntegerField(choices=installment_status(), default=sales.PENDING)
+    authorization = models.ForeignKey(to='AuthCard', on_delete=models.RESTRICT, blank=True, null=True,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -208,25 +209,6 @@ class DiscountVoucher(models.Model):
 
     def __str__(self):
         return f'{self.code} ({self.amount})'
-
-# class Payout(models.Model):
-#     realtor = models.ForeignKey('Realtor', models.DO_NOTHING)
-#     amount = models.DecimalField(max_digits=10, decimal_places=0)
-#     payment_status = models.CharField(max_length=10)
-#     bank_account = models.ForeignKey(to='BankAccount',
-#                                      on_delete=models.DO_NOTHING)
-#     reference = models.CharField(max_length=50, blank=True, null=True)
-#     remarks = models.CharField(max_length=200, blank=True, null=True)
-#     payment_time = models.DateTimeField(blank=True, null=True)
-#     recipient_code = models.CharField(max_length=100, blank=True, null=True)
-#     transfer_code = models.CharField(max_length=100, blank=True, null=True)
-#     payment_charges = models.DecimalField(max_digits=10, decimal_places=0)
-
-#     class Meta:
-#         db_table = 'payouts'
-
-#     def __str__(self):
-#         return self.amount
 
 class Withdrawal(models.Model):
     recipient_code = models.CharField(max_length=100, blank=True)
@@ -258,6 +240,16 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f'{self.account_number}'
+
+class Commission(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.DO_NOTHING)
+    amount = models.FloatField()
+    percentage = models.FloatField(default=4)
+    detail = models.CharField(max_length=250, blank=True, null=True)
+    is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.client} get {self.amount}'
 
 # class Refferal(models.Model):
 #     user = models.OneToOneField(to='User')
