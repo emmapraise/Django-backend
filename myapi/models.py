@@ -76,7 +76,7 @@ class AuthCard(models.Model):
     bin = models.CharField(max_length=30)
     bank = models.CharField(max_length=30)
     channel = models.CharField(max_length=30)
-    signature = models.CharField(max_length=30)
+    signature = models.CharField(max_length=30, unique=True)
     is_reusable = models.BooleanField(default=False)
     country_code = models.CharField(max_length=30)
     account_name = models.CharField(max_length=50, blank=True, null=True)
@@ -184,7 +184,7 @@ class Installmental_sales(models.Model):
     last_charge = models.DateField(auto_now=True)
     next_charge = models.DateField(blank=True, null=True)
     status = models.IntegerField(choices=installment_status(), default=sales.PENDING)
-    authorization = models.ForeignKey(to='AuthCard', on_delete=models.RESTRICT, blank=True, null=True,)
+    authorization = models.ForeignKey(to='AuthCard', on_delete=models.DO_NOTHING, blank=True, null=True,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

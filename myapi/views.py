@@ -223,9 +223,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 
                 user.wallet_balance = user.wallet_balance + (response['data']['amount'] / 100)
                 
-
             elif pay.type == payments.INSTALLMENT:
-
                 in_sale = Installmental_sales.objects.get(id = pay.install_sale.id)
                 in_sale.install_limit = in_sale.install_limit -1
                 if in_sale.install_limit <= 0:
@@ -237,23 +235,25 @@ class PaymentViewSet(viewsets.ModelViewSet):
                     in_sale.status = sales.PAYING
                     in_sale.next_charge = (date.today() + timedelta(days= 30))
                     in_sale.amount_paid = in_sale.amount_paid + in_sale.amount
-                    
-                authcard = AuthCard.objects.create(
-                    client_id = request.user.id,
-                    authorization_code = response['data']['authorization']['authorization_code'],
-                    card_type = response['data']['authorization']['card_type'],
-                    last4 = response['data']['authorization']['last4'],
-                    exp_month = response['data']['authorization']['exp_month'],
-                    exp_year = response['data']['authorization']['exp_year'],
-                    bin = response['data']['authorization']['bin'],
-                    bank = response['data']['authorization']['bank'],
-                    channel = response['data']['authorization']['channel'],
-                    signature = response['data']['authorization']['signature'],
-                    is_reusable = response['data']['authorization']['reusable'],
-                    country_code = response['data']['authorization']['country_code'],
-                    account_name = response['data']['authorization']['account_name'], 
-                )
-                authcard.save()
+                try:
+                    authcard = AuthCard.objects.get(signature = response['data']['authorization']['signature'])
+                except AuthCard.DoesNotExist:
+                    authcard = AuthCard.objects.create(
+                        client_id = request.user.id,
+                        authorization_code = response['data']['authorization']['authorization_code'],
+                        card_type = response['data']['authorization']['card_type'],
+                        last4 = response['data']['authorization']['last4'],
+                        exp_month = response['data']['authorization']['exp_month'],
+                        exp_year = response['data']['authorization']['exp_year'],
+                        bin = response['data']['authorization']['bin'],
+                        bank = response['data']['authorization']['bank'],
+                        channel = response['data']['authorization']['channel'],
+                        is_reusable = response['data']['authorization']['reusable'],
+                        country_code = response['data']['authorization']['country_code'],
+                        account_name = response['data']['authorization']['account_name'], 
+                        defaults = {'signature': response['data']['authorization']['signature']}
+                    )
+                    authcard.save()
                 in_sale.authorization = authcard
                 in_sale.save()
 
@@ -378,3 +378,17 @@ class CommissionViewSet(viewsets.ModelViewSet):
     queryset = Commission.objects.all()
     serializer_class = CommissionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class ReferralAPIView(APIView):
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        code = str(kwargs.get('ref'))
+        print(code)
+
+        try:
+            user = User.objects.get(user_code = code)
+            referral_id = user.id
+        except :
+            pass
+        return Response(data= {'referral': referral_id})
