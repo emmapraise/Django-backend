@@ -29,5 +29,6 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name='auth_logout'),
     path(r'list_bank', views.ListOfBankAPIView.as_view()),
     path(r'register/ref=<str:ref>', views.ReferralAPIView.as_view()),
+    path(r'pending-commission', views.PendingCommissionAPIView.as_view()),
     # path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
