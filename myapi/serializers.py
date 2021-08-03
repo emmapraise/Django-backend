@@ -121,6 +121,11 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         exclude = ['client']
+        
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = '__all__'
 
 class SavedSerializer(serializers.ModelSerializer):
     class Meta:
