@@ -44,6 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # try:
         response = super().create(request, args, **kwargs)
         user = User.objects.get(email=response.data['email'])
+        Wallet.objects.create(client_id = user.id)
         response = {
             'data': response.data,
             'message': 'User created successfully.',
@@ -219,9 +220,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
             pay.save()
 
             user = User.objects.get(id = request.user.id)
+
             if pay.type == payments.TOUPUP:
-                
-                user.wallet_balance = user.wallet_balance + (response['data']['amount'] / 100)
+                wallet = Wallet.objects.get(client_id = request.user.id)
+                wallet.balance = wallet.balance + (response['data']['amount'] / 100)
+                wallet.save()
+                WalletTranscation.objects.create(
+                    wallet_id = wallet.id,
+                    amount = (response['data']['amount'] / 100),
+                    type = wallets.TOPUP,
+                    status = wallets.PAID
+                )
                 
             elif pay.type == payments.INSTALLMENT:
                 in_sale = Installmental_sales.objects.get(id = pay.install_sale.id)
@@ -379,6 +388,12 @@ class CommissionViewSet(viewsets.ModelViewSet):
     serializer_class = CommissionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail = True, methods=['POST'])
+    def approve(self, request, pk=None):
+        commission = self.get_object()
+        # serializer = CommissionSerializer(data = request.data)
+        commission.is_approved = True
+
 class ReferralAPIView(APIView):
     permission_classes = []
 
@@ -388,7 +403,58 @@ class ReferralAPIView(APIView):
 
         try:
             user = User.objects.get(user_code = code)
-            referral_id = user.id
+            id = user.id
+            first_name = user.first_name
+            last_name = user.last_name
+            return Response(data= {'referral_id': id, 'referral_first_name': first_name, 'referral_last_name': last_name})
         except :
-            pass
-        return Response(data= {'referral': referral_id})
+            
+            return Response(data= {'message': 'No user found'})
+
+class PendingCommissionAPIView(APIView):
+    """
+    API View of actions on Pending Commission
+    """
+
+    def get(self, request):
+        """
+        GET method for pending commission
+
+        Args:
+            self (obj)
+            request (obj)
+
+        Returns:
+            Response (dic): status, data and message
+        """
+        commission = Commission.objects.all()
+        if commission.exists():
+            commission = commission.values('id', 'amount', 'client__first_name', 'client__last_name')
+
+        return Response(data={
+            'commission': commission
+        })
+
+    def post(self, request):
+        """
+        POST method on pending commission
+
+        Args:
+            self (obj)
+            request (obj)
+
+        Returns:
+            Response (dic): status, data and message
+        """
+        request_id = request.data.get('commission_id', 0)
+        is_approved = bool(request.data.get('is_approved', False))
+        commission_request = Commission.objects.filter(id=request_id)
+        if commission_request.exists():
+            if is_approved is True:
+                commission_request.update(status=requests.APPROVED)
+            elif is_approved is False:
+                commission_request.update(status=requests.DISAPPROVED)
+        return Response(data={
+            'commission_request': commission_request
+        })
+

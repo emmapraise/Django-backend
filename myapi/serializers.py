@@ -48,7 +48,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ['is_active', 'is_staff', 'is_superuser', 'user_code',
-                   'date_joined', 'last_login', 'groups', 'user_permissions', 'wallet_balance']
+                   'date_joined', 'last_login', 'groups', 'user_permissions',]
 
     def create(self, validated_data):
         # Generates user_code and creates new User object.

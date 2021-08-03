@@ -1,9 +1,10 @@
-from mysite.enums import payments, sales
+from mysite.enums import payments, sales, wallets
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from mysite.enums.payments import payment_types, payment_status, withdrawal_status
 from mysite.enums.sales import sale_status, installment_status, sale_types
+from mysite.enums.wallets import wallet_status, wallet_types
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -49,7 +50,6 @@ class User(AbstractUser):
     user_code = models.CharField(max_length=50, blank=True, null=True, unique=True)
     avatar = models.ImageField(null = True, blank = True)
     username = models.CharField(max_length=50, null=True, blank=True, unique=True)
-    wallet_balance = models.IntegerField(default=0, blank=True, null=True)
     residential_address = models.TextField(blank=True, null = True)
     referral = models.ForeignKey(to='User', null=True, blank=True, on_delete=models.SET_NULL, related_name='downline', default=1)
     country = models.CharField(max_length=20, blank=True, null=True)
@@ -251,10 +251,18 @@ class Commission(models.Model):
     def __str__(self):
         return f'{self.client} get {self.amount}'
 
-# class Refferal(models.Model):
-#     user = models.OneToOneField(to='User')
-#     upline = models.ForeignKey(to='User', null=True, on_delete=models.SET_NULL, related_name='downlines')
-#     ref_code = models.CharField(max_length=20, blank=True, null=True)
+class Wallet(models.Model):
+    client = models.ForeignKey(to='User', on_delete=models.CASCADE)
+    balance = models.IntegerField(default=0)
 
-#     def __str__(self):
-#         return self.ref_code
+    def __str__(self):
+        return f'{self.user} has {self.balance} balance'
+
+class WalletTranscation(models.Model):
+    wallet = models.ForeignKey(to='Wallet', on_delete=models.CASCADE)
+    amount = models.FloatField()
+    type = models.CharField(blank=True, null=True, max_length=30, choices=wallet_types())
+    status = models.IntegerField(choices=wallet_status(), default=wallets.PENDING)
+
+    def __str__(self):
+        return self.amount
