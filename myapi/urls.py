@@ -4,7 +4,7 @@ from myapi import views
 from rest_framework_simplejwt import views as jwt_views
 
 router = routers.DefaultRouter()
-router.register(r'register', views.UserViewSet)
+router.register(r'auth/register', views.UserViewSet)
 router.register(r'category', views.CategoryViewSet)
 router.register(r'product', views.ProductViewSet)
 router.register(r'shipping', views.ShippingViewSet)
@@ -22,11 +22,11 @@ router.register(r'commission', views.CommissionViewSet)
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
-    path('login/', jwt_views.TokenObtainPairView.as_view(),
+    path('auth/login/', jwt_views.TokenObtainPairView.as_view(),
          name='token_obtain_pair'),
-    path('login/refresh/', jwt_views.TokenRefreshView.as_view(),
+    path('auth/login/refresh/', jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
-    path('logout/', views.LogoutView.as_view(), name='auth_logout'),
+    path('auth/logout/', views.LogoutView.as_view(), name='auth_logout'),
     path(r'list_bank', views.ListOfBankAPIView.as_view()),
     path(r'register/ref=<str:ref>', views.ReferralAPIView.as_view()),
     path(r'pending-commission', views.PendingCommissionAPIView.as_view()),
