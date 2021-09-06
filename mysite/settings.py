@@ -26,7 +26,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 
 # ALLOWED_HOSTS = ['ideathinker-django.herokuapp.com', 'localhost']
-ALLOWED_HOSTS = ['localhost','.herokuapp.com', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['localhost','.herokuapp.com', '127.0.0.1', 'localhost:3000','*']
 
 # Application definition
 
