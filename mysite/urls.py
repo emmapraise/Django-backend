@@ -23,7 +23,7 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Etsea API",
+      title="Etsea APIs",
       default_version='v1',
       description="Etsea API documentation",
       terms_of_service="https://www.google.com/policies/terms/",
