@@ -27,18 +27,18 @@ DEBUG = True
 
 # ALLOWED_HOSTS = ['ideathinker-django.herokuapp.com', 'localhost']
 ALLOWED_HOSTS = ['localhost','.herokuapp.com', '127.0.0.1', 'localhost:3000','*']
-CORS_ALLOWED_ORIGINS = [
+# CORS_ALLOWED_ORIGINS = [
 
 
 
-    'localhost','.herokuapp.com', '127.0.0.1', '*', 
+#     'localhost','.herokuapp.com', '127.0.0.1', '*', 
 
-    ]
-CSRF_TRUSTED_ORIGINS = [
+#     ]
+# CSRF_TRUSTED_ORIGINS = [
 
-        'localhost', '.herokuapp.com','127.0.0.1',
+#         'localhost', '.herokuapp.com','127.0.0.1',
 
-    ]
+#     ]
 
 # Application definition
 
