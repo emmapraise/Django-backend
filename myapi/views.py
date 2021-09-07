@@ -143,6 +143,14 @@ class CartViewSet(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+class WalletViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for all actions on Wallet
+    """
+    queryset = Wallet.objects.all()
+    serializer_class = WalletSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 class ShippingViewSet(viewsets.ModelViewSet):
     """
