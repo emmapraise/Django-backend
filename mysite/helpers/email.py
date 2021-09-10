@@ -4,12 +4,15 @@ from django.utils.encoding import force_bytes
 from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode
 from sendgrid import Email, To, Content, Mail
+from django.core.mail import send_mail
 
-from realmax.helpers.tokens import account_token
-from realmax.settings import base as settings
+from mysite.helpers.tokens import account_token
+from mysite import settings 
 
 sg = sendgrid.SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
+# send_mail("Subject", "text body", "from@example.com",
+#           ["to@example.com"], html_message="<html>html body</html>")
 
 def send_welcome(user, domain):
     """
@@ -35,9 +38,9 @@ def send_welcome(user, domain):
         'verification_url': verification_url
     }
 
-    from_email = Email('welcome@realmax.com')
+    from_email = Email('welcome@etsea.com')
     to_email = To(user_email)
-    subject = 'Welcome to Realmax 🚀'
+    subject = 'Welcome to Etsea 🚀'
     html_content = get_template('welcome.html').render(data)
     content = Content('text/html', html_content)
     mail = Mail(from_email, to_email, subject, content)
@@ -74,7 +77,7 @@ def send_email_verification(user, domain):
         'firstname': first_name
     }
 
-    from_email = Email('welcome@realmax.com')
+    from_email = Email('welcome@etsea.com')
     to_email = To(user_email)
     subject = 'Email Verification'
     html_content = get_template('email-verification.html').render(data)
@@ -99,7 +102,7 @@ def password_reset(user, domain):
 
     Returns:
         bool: a boolean value representing success status
-    """
+    """ 
 
     user_email = user.email
     uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -111,7 +114,7 @@ def password_reset(user, domain):
         'verification_url': verification_url
     }
 
-    from_email = Email('help@realmax.com')
+    from_email = Email('help@etsea.com')
     to_email = To(user_email)
     subject = 'Reset Password'
     html_content = get_template('reset-password.html').render(data)

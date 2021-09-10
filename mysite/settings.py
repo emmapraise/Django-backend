@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_yasg',
+    'mysite',
+    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -149,6 +151,19 @@ MEDIA_ROOT = 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+ANYMAIL = {
+    "MAILGUN_API_KEY": config('MAILGUN_API_KEY'),
+    "MAILGUN_API_URL": "https://api.mailgun.net/v3",
+}
+EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+
+SENDGRID_API_KEY = config('SENDGRID_API_KEY')
+DEFAULT_FROM_EMAIL = "admin@etsea.com"
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_HOST_USER = 'apikey'
+# EMAIL_HOST_PASSWORD = config('SENDGRID_API_KEY')
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
 
 REST_FRAMEWORK = {
     # 'DEFAULT_PERMISSION_CLASSES': 

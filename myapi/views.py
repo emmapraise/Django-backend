@@ -4,14 +4,21 @@ from myapi.serializers import *
 from myapi.models import *
 from myapi.serializers import UserSerializer
 from myapi.models import User
+
 from django.db import IntegrityError
+from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect, render
+from django.utils.encoding import force_text
+from django.utils.http import urlsafe_base64_decode
+
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.generics import UpdateAPIView, get_object_or_404
 
 from paystackapi.customer import Customer
 from paystackapi.misc import Misc
@@ -21,6 +28,7 @@ from paystackapi.transfer import Transfer
 from paystackapi.trecipient import TransferRecipient
 
 from mysite.helpers.paystack import resolve_account
+from mysite.helpers.email import *
 from mysite.enums import payments
 from django.conf import settings
 # Create your views here.
@@ -32,30 +40,33 @@ class UserViewSet(viewsets.ModelViewSet):
     API endpoint that allows all users to be viewed or edited.
 
     Available  Endpoint
-    register: https://etsea.herokuapp.com/register/
-    Login: https://etsea.herokuapp.com/login
-    Logout: https://etsea.herokuapp.com/logout
+    register: https://etsea.herokuapp.com/api/register/
+    Login: https://etsea.herokuapp.com/api/login
+    Logout: https://etsea.herokuapp.com/api/logout
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = []
 
     def create(self, request, *args, **kwargs):
-        # try:
-        response = super().create(request, args, **kwargs)
-        user = User.objects.get(email=response.data['email'])
-        Wallet.objects.create(client_id = user.id)
-        response = {
-            'data': response.data,
-            'message': 'User created successfully.',
-            'status': 'success'
-        }
-        # except IntegrityError:
-            # response = {
-            #     'data': {},
-            #     'message': 'Existing account found with this email.',
-            #     'status': 'failure'
-            # }
+        try:
+            response = super().create(request, args, **kwargs)
+            user = User.objects.get(email=response.data['email'])
+            Wallet.objects.create(client_id = user.id)
+            response = {
+                'data': response.data,
+                'message': 'User created successfully.',
+                'status': 'success'
+            }
+            if send_welcome(user, request.META.get('HTTP_REFERER')):
+                response['message'] += 'Welcome email sent successfully.'
+
+        except IntegrityError:
+            response = {
+                'data': {},
+                'message': 'Existing account found with this email.',
+                'status': 'failure'
+            } 
         return Response(data=response, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
@@ -70,6 +81,173 @@ class LogoutView(APIView):
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class ActivateAPIView(APIView):
+    permission_classes = []
+
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and account_token.check_token(user, token):
+            # activate user:
+            user.is_active = True
+            user.save()
+
+            return Response(status=status.HTTP_200_OK, data={
+                'message': 'Email verification successful.'
+            })
+
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={
+                'message': 'Activation link is invalid!'
+            })
+
+
+class ChangePasswordAPIView(UpdateAPIView):
+    """
+    An endpoint for changing password.
+    """
+
+    serializer_class = ChangePasswordSerializer
+    model = User
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, queryset=None):
+        """
+        GET method on password
+
+        Args:
+            self (obj)
+            queryset (obj)
+
+        Returns:
+            obj (dic): the current user
+        """
+        obj = self.request.user
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        PUT method to change user password
+
+        Args:
+            self (obj)
+            request (obj)
+
+        Returns:
+            Response (dic): status code
+        """
+        self.object = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            if not self.object.check_password(
+                    serializer.data.get("old_password")):
+                data = {
+                    'errors': {
+                        "old_password": ["Wrong password."]
+                    }
+                }
+                return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+            self.object.set_password(serializer.data.get("new_password"))
+            self.object.save()
+            changed_password(self.object.email)
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendResetPasswordAPIView(APIView):
+    """
+    An endpoint for sending email to reset forgotten password.
+    """
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            print(f'post data: {request.data}')
+            user = User.objects.get(email=request.data['email'])
+            print(f'user object: {UserSerializer(user).data}')
+
+            # send password reset email
+            password_reset(user, request.META.get('HTTP_REFERER'))
+            status_code = status.HTTP_200_OK
+            response = {
+                'data': {},
+                'message': 'Password reset email sent.',
+                'status': 'success'
+            }
+        except User.DoesNotExist:
+            response = {
+                'data': {},
+                'message': 'User with that email address not found.',
+                'status': 'failure'
+            }
+            status_code = status.HTTP_404_NOT_FOUND
+        return Response(status=status_code, data=response)
+
+
+class ResetPasswordAPIView(APIView):
+    """
+    An endpoint for resetting forgotten password.
+    """
+    permission_classes = []
+
+    def get(self, request, uidb64, token):
+        response = {
+            'data': {},
+            'message': 'Invalid reset password link!',
+            'status': 'failure'
+        }
+        status_code = status.HTTP_400_BAD_REQUEST
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and account_token.check_token(user, token):
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = account_token.make_token(user)
+            reset_link = f'{get_current_site(request)}/api/reset-password/{uid}/{token}/'
+            response = {
+                'data': {
+                    'reset_link': reset_link
+                },
+                'message': 'Link verified. Post new password to new link.',
+                'status': 'success'
+            }
+            status_code = status.HTTP_200_OK
+        return Response(status=status_code, data=response)
+
+    def post(self, request, uidb64, token):
+        response = {
+            'data': {},
+            'message': 'Invalid reset password link!',
+            'status': 'failure'
+        }
+        status_code = status.HTTP_400_BAD_REQUEST
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and account_token.check_token(user, token):
+            user.set_password(request.data['new_password'])
+            user.save()
+
+            # send changed password email to user
+            changed_password(user.email)
+            response = {
+                'data': {},
+                'message': 'Password successfully reset.',
+                'status': 'success'
+            }
+            status_code = status.HTTP_200_OK
+        return Response(status=status_code, data=response)
+
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """API endpoint for category"""

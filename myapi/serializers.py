@@ -72,6 +72,46 @@ class UserSerializer(serializers.ModelSerializer):
             
         return user
 
+class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint.
+    """
+
+    old_password = serializers.CharField(style={'input_type': 'password'},
+                                         write_only=True, required=True)
+    new_password = serializers.CharField(style={'input_type': 'password'},
+                                         write_only=True, required=True)
+
+    class Meta:
+        model = User
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password reset endpoint.
+    """
+
+    password = serializers.CharField(style={'input_type': 'password'},
+                                     write_only=True, required=True)
+
+    class Meta:
+        model = User
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """A serializers for all actions on Category"""
     class Meta:
