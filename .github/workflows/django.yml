@@ -36,6 +36,7 @@ jobs:
         PAYSTACK_SECRET_KEY: ''
         PAYSTACK_PUBLIC_KEY: ''
         SENDGRID_API_KEY: ''
+        MAILGUN_API_KEY: ''
         ENVIRONMENT: 'staging'
         DEBUG: True
       run: |
