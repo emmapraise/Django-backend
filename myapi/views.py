@@ -52,6 +52,9 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             response = super().create(request, args, **kwargs)
             user = User.objects.get(email=response.data['email'])
+            # deactivate user:
+            user.is_active = False
+            user.save()
             Wallet.objects.create(client_id = user.id)
             response = {
                 'data': response.data,
@@ -68,6 +71,31 @@ class UserViewSet(viewsets.ModelViewSet):
                 'status': 'failure'
             } 
         return Response(data=response, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'])
+    def verify_email(self, request):
+        """GET method to verify Email """
+        uidb64 = request.GET['uid']
+        token = request.GET['token']
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and account_token.check_token(user, token):
+            # activate user:
+            user.is_active = True
+            user.save()
+
+            return Response(status=status.HTTP_200_OK, data={
+                'message': 'Email verification successful.'
+            })
+
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={
+                'message': 'Activation link is invalid!'
+            })
+
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
