@@ -38,7 +38,7 @@ def send_welcome(user, domain):
         'verification_url': verification_url
     }
 
-    from_email = Email('welcome@etsea.com')
+    from_email = Email('emmapraise@amazonsclique.com')
     to_email = To(user_email)
     subject = 'Welcome to Etsea 🚀'
     html_content = get_template('welcome.html').render(data)
@@ -114,7 +114,7 @@ def password_reset(user, domain):
         'verification_url': verification_url
     }
 
-    from_email = Email('help@etsea.com')
+    from_email = Email('emmapraise@amazonsclique.com')
     to_email = To(user_email)
     subject = 'Reset Password'
     html_content = get_template('reset-password.html').render(data)
