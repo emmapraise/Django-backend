@@ -130,6 +130,11 @@ class DiscountVoucherSerializer(serializers.ModelSerializer):
         model = DiscountVoucher
         fields = '__all__'
 
+class PlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plan
+        fields = '__all__'
+
 class ReadSaleSerializer(serializers.ModelSerializer):
     client = UserSerializer(read_only = True)
     product = ProductSerializer(read_only = True)
