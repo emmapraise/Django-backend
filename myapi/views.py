@@ -31,9 +31,55 @@ from mysite.helpers.paystack import resolve_account
 from mysite.helpers.email import *
 from mysite.enums import payments
 from django.conf import settings
+
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.views import TokenObtainPairView
 # Create your views here.
 paystack_secret_key = settings.PAYSTACK_SECRET_KEY
 paystack = Paystack(secret_key=paystack_secret_key)
+
+User = get_user_model()
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            user = get_object_or_404(User, email=request.data['email'])
+            if not user.is_active:
+                status_code = status.HTTP_400_BAD_REQUEST
+                response = {
+                    'data': {},
+                    'status': 'failure',
+                    'message': 'User email verification pending'
+                }
+                return Response(data=response, status=status_code)
+            serializer.is_valid(raise_exception=True)
+            status_code = status.HTTP_200_OK
+            response = {
+                'data': {
+                    'tokens': serializer.validated_data,
+                    'user': UserSerializer(user).data
+                },
+                'status': 'success',
+                'message': 'User successfully authenticated'
+            }
+        except User.DoesNotExist:
+            status_code = status.HTTP_404_NOT_FOUND
+            response = {
+                'data': {},
+                'status': 'failure',
+                'message': 'User account not found'
+            }
+        except TokenError:
+            status_code = status.HTTP_400_BAD_REQUEST
+            response = {
+                'data': {},
+                'status': 'failure',
+                'message': 'Token is invalid or expired'
+            }
+
+        return Response(data=response, status=status_code)
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -96,7 +142,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 'message': 'Activation link is invalid!'
             })
 
-
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -132,7 +177,6 @@ class ActivateAPIView(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={
                 'message': 'Activation link is invalid!'
             })
-
 
 class ChangePasswordAPIView(UpdateAPIView):
     """
@@ -186,7 +230,6 @@ class ChangePasswordAPIView(UpdateAPIView):
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class SendResetPasswordAPIView(APIView):
     """
     An endpoint for sending email to reset forgotten password.
@@ -215,7 +258,6 @@ class SendResetPasswordAPIView(APIView):
             }
             status_code = status.HTTP_404_NOT_FOUND
         return Response(status=status_code, data=response)
-
 
 class ResetPasswordAPIView(APIView):
     """
@@ -275,8 +317,6 @@ class ResetPasswordAPIView(APIView):
             status_code = status.HTTP_200_OK
         return Response(status=status_code, data=response)
 
-
-
 class CategoryViewSet(viewsets.ModelViewSet):
     """API endpoint for category"""
 
@@ -289,6 +329,13 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = []
+
+class PlanViewSet(viewsets.ModelViewSet):
+    """API endpoint for category"""
+
+    queryset = Plan.objects.all()
+    serializer_class = PlanSerializer
     permission_classes = []
 
 class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):

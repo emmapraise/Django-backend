@@ -94,6 +94,8 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     price = models.DecimalField(decimal_places=2, max_digits=10)
     promo_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
+    initial_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
+    installment_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     category = models.ForeignKey(to='Category', on_delete=models.CASCADE, blank=True, null=True)
     banner = models.ImageField()
     description = models.TextField()
@@ -108,6 +110,14 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+class Plan(models.Model):
+    product = models.ForeignKey(to='Product', on_delete = models.CASCADE, blank=True, null=True)
+    limit = models.IntegerField(default=3)
+    interval_amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
+
+    def __str__(self):
+        return f'({self.product}) of interval ({self.interval_amount})'
 
 class Shipping(models.Model):
     client = models.ForeignKey(to = 'User', on_delete= models.CASCADE)

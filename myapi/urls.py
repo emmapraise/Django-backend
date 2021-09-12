@@ -23,9 +23,11 @@ router.register(r'commission', views.CommissionViewSet)
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
-    path('auth/login/', jwt_views.TokenObtainPairView.as_view(),
+#   path('auth/login/', jwt_views.TokenObtainPairView.as_view(),
+#          name='token_obtain_pair'),
+     path('auth/login/', views.CustomTokenObtainPairView.as_view(),
          name='token_obtain_pair'),
-    path('auth/login/refresh/', jwt_views.TokenRefreshView.as_view(),
+     path('auth/login/refresh/', jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
     path('auth/logout/', views.LogoutView.as_view(), name='auth_logout'),
     path(r'auth/reset-password/', views.SendResetPasswordAPIView.as_view()),
