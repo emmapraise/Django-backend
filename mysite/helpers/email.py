@@ -108,7 +108,7 @@ def password_reset(user, domain):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = account_token.make_token(user)
 
-    verification_url = f'{domain}reset-password/?uid={uid}&token={token}'
+    verification_url = f'{domain}/reset-password/?uid={uid}&token={token}'
 
     data = {
         'verification_url': verification_url
