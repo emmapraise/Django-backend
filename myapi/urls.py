@@ -30,7 +30,7 @@ urlpatterns = [
      path('auth/login/refresh/', jwt_views.TokenRefreshView.as_view(),
          name='token_refresh'),
     path('auth/logout/', views.LogoutView.as_view(), name='auth_logout'),
-    path(r'auth/reset-password/', views.SendResetPasswordAPIView.as_view()),
+    path(r'auth/reset-password', views.SendResetPasswordAPIView.as_view()),
     path(r'auth/reset-password/<uidb64>/<token>/',views.ResetPasswordAPIView.as_view()),
 #     path(r'<uidb64>/<token>', views.ActivateAPIView.as_view()),
 #     path(r'auth/register/verify-email/', views.ActivateAPIView.as_view()),
