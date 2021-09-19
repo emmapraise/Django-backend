@@ -361,7 +361,8 @@ class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, args, **kwargs)
-        amount =  json.dumps(float(response.data['price']) * 100)
+        product = Product.objects.get(id = response.data['product'])
+        amount =  json.dumps(float(product.price) * 100)
         email = request.user.email
 
         resp = Transaction.initialize(amount=amount, email=email)
@@ -386,7 +387,7 @@ class Installmental_SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet)
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        amount =  json.dumps(float(response.data['amount']) * 100)
+        amount =  json.dumps(float(response.data['sale']['price']) * 100)
         email = request.user.email
 
         resp = Transaction.initialize(amount=amount, email=email)

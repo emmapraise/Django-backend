@@ -174,8 +174,8 @@ class Sale(models.Model):
     quantity = models.IntegerField(default=1)
     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
     price = models.FloatField(default=0)
-    discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
-                                         blank=True)
+    # discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
+    #                                      blank=True)
     status = models.IntegerField(choices=sale_status(), default=sales.PENDING)
     type = models.CharField(blank=True, null=True, max_length=30, choices=sale_types(), default=sales.OUTRIGHT)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -189,7 +189,7 @@ class Installmental_sales(models.Model):
     amount_paid = models.FloatField(default=0)
     amount = models.FloatField(default=0)
     is_commission_approved = models.BooleanField(default=False)
-    install_limit = models.IntegerField(default=0)
+    install_limit = models.IntegerField(default=3)
     last_charge = models.DateField(auto_now=True)
     next_charge = models.DateField(blank=True, null=True)
     status = models.IntegerField(choices=installment_status(), default=sales.PENDING)
