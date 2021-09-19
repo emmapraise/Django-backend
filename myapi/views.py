@@ -331,12 +331,24 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = []
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, args, **kwargs)
+        product = Product.objects.get(id=response.data['id'])
+
+        Plan.objects.create(interval_amount = product.installment_price, product_id = product.id)
+        response = {
+                'data': response.data,
+                'message': 'Product and Plan created successfully.',
+                'status': 'success'
+            }
+        return Response(data=response, status=status.HTTP_201_CREATED)
+
 class PlanViewSet(viewsets.ModelViewSet):
     """API endpoint for category"""
 
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
-    permission_classes = []
+    permission_classes = [permissions.IsAuthenticated]
 
 class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
     """

@@ -93,7 +93,6 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=255)
     price = models.DecimalField(decimal_places=2, max_digits=10)
-    promo_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     initial_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     installment_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     category = models.ForeignKey(to='Category', on_delete=models.CASCADE, blank=True, null=True)
@@ -114,7 +113,7 @@ class Product(models.Model):
 class Plan(models.Model):
     product = models.ForeignKey(to='Product', on_delete = models.CASCADE, blank=True, null=True)
     limit = models.IntegerField(default=3)
-    interval_amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
+    interval_amount = models.DecimalField(decimal_places=2, max_digits=10,)
 
     def __str__(self):
         return f'({self.product}) of interval ({self.interval_amount})'
