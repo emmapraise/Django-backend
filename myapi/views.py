@@ -1,5 +1,5 @@
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from myapi.serializers import *
 from myapi.models import *
 from myapi.serializers import UserSerializer
@@ -594,6 +594,23 @@ class ListOfBankAPIView(APIView):
                 bank_code=response['data'][i]['code'])
             bank.save()
         return Response(data=response, status=status.HTTP_200_OK)
+
+class SchedulePayment(APIView):
+    """
+        Endpoint to check scheduled payment for today
+    """
+    def get_data(self):
+        """Get the list of scheduled payment and make payment"""
+        today = datetime.date(datetime.now())
+        
+        val = Installmental_sales.objects.filter(next_charge = today)
+        vall = val.values('authorization__authorization_code')
+        # print(val.values())
+        # .values('authorization_id', 'authorization__authorization_code')
+        for i in vall:
+            print(i)
+            # pass
+
 
 class WithdrawalViewSet(viewsets.ModelViewSet):
     """API View for actions on Withdrawal """

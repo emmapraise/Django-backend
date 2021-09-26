@@ -26,7 +26,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 
 # ALLOWED_HOSTS = ['ideathinker-django.herokuapp.com', 'localhost']
-ALLOWED_HOSTS = ['localhost','.herokuapp.com', '127.0.0.1', 'localhost:3000', '.netlify.app']
+ALLOWED_HOSTS = ['localhost','.herokuapp.com', '127.0.0.1', 'localhost:3000', '.netlify.app', '*']
 
 # Application definition
 
@@ -151,11 +151,11 @@ MEDIA_ROOT = 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ANYMAIL = {
-    "MAILGUN_API_KEY": config('MAILGUN_API_KEY'),
-    "MAILGUN_API_URL": "https://api.mailgun.net/v3",
-}
-EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+# ANYMAIL = {
+#     "MAILGUN_API_KEY": config('MAILGUN_API_KEY'),
+#     "MAILGUN_API_URL": "https://api.mailgun.net/v3",
+# }
+# EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 
 SENDGRID_API_KEY = config('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = "admin@etsea.com"
