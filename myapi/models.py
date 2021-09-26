@@ -93,7 +93,6 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=255)
     price = models.DecimalField(decimal_places=2, max_digits=10)
-    promo_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     initial_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     installment_price = models.DecimalField(decimal_places=2, max_digits=10, blank = True, null = True)
     category = models.ForeignKey(to='Category', on_delete=models.CASCADE, blank=True, null=True)
@@ -114,7 +113,7 @@ class Product(models.Model):
 class Plan(models.Model):
     product = models.ForeignKey(to='Product', on_delete = models.CASCADE, blank=True, null=True)
     limit = models.IntegerField(default=3)
-    interval_amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
+    interval_amount = models.DecimalField(decimal_places=2, max_digits=10,)
 
     def __str__(self):
         return f'({self.product}) of interval ({self.interval_amount})'
@@ -175,8 +174,8 @@ class Sale(models.Model):
     quantity = models.IntegerField(default=1)
     product = models.ForeignKey(to='Product', on_delete=models.CASCADE)
     price = models.FloatField(default=0)
-    discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
-                                         blank=True)
+    # discount_voucher = models.ForeignKey(to='DiscountVoucher',on_delete=models.PROTECT, null=True,
+    #                                      blank=True)
     status = models.IntegerField(choices=sale_status(), default=sales.PENDING)
     type = models.CharField(blank=True, null=True, max_length=30, choices=sale_types(), default=sales.OUTRIGHT)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -190,7 +189,7 @@ class Installmental_sales(models.Model):
     amount_paid = models.FloatField(default=0)
     amount = models.FloatField(default=0)
     is_commission_approved = models.BooleanField(default=False)
-    install_limit = models.IntegerField(default=0)
+    install_limit = models.IntegerField(default=3)
     last_charge = models.DateField(auto_now=True)
     next_charge = models.DateField(blank=True, null=True)
     status = models.IntegerField(choices=installment_status(), default=sales.PENDING)

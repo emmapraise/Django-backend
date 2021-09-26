@@ -1,5 +1,5 @@
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from myapi.serializers import *
 from myapi.models import *
 from myapi.serializers import UserSerializer
@@ -331,12 +331,24 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = []
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, args, **kwargs)
+        product = Product.objects.get(id=response.data['id'])
+
+        Plan.objects.create(interval_amount = product.installment_price, product_id = product.id)
+        response = {
+                'data': response.data,
+                'message': 'Product and Plan created successfully.',
+                'status': 'success'
+            }
+        return Response(data=response, status=status.HTTP_201_CREATED)
+
 class PlanViewSet(viewsets.ModelViewSet):
     """API endpoint for category"""
 
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
-    permission_classes = []
+    permission_classes = [permissions.IsAuthenticated]
 
 class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
     """
@@ -349,7 +361,8 @@ class SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, args, **kwargs)
-        amount =  json.dumps(float(response.data['price']) * 100)
+        product = Product.objects.get(id = response.data['product'])
+        amount =  json.dumps(float(product.price) * 100)
         email = request.user.email
 
         resp = Transaction.initialize(amount=amount, email=email)
@@ -374,7 +387,7 @@ class Installmental_SaleViewSet(ReadWriteSerializerMixin, viewsets.ModelViewSet)
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        amount =  json.dumps(float(response.data['amount']) * 100)
+        amount =  json.dumps(float(response.data['sale']['price']) * 100)
         email = request.user.email
 
         resp = Transaction.initialize(amount=amount, email=email)
@@ -581,6 +594,23 @@ class ListOfBankAPIView(APIView):
                 bank_code=response['data'][i]['code'])
             bank.save()
         return Response(data=response, status=status.HTTP_200_OK)
+
+class SchedulePayment(APIView):
+    """
+        Endpoint to check scheduled payment for today
+    """
+    def get_data(self):
+        """Get the list of scheduled payment and make payment"""
+        today = datetime.date(datetime.now())
+        
+        val = Installmental_sales.objects.filter(next_charge = today)
+        vall = val.values('authorization__authorization_code')
+        # print(val.values())
+        # .values('authorization_id', 'authorization__authorization_code')
+        for i in vall:
+            print(i)
+            # pass
+
 
 class WithdrawalViewSet(viewsets.ModelViewSet):
     """API View for actions on Withdrawal """

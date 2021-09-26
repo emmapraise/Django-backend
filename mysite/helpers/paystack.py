@@ -54,6 +54,23 @@ def resolve_account(key, account_number, bank_code):
 
     return json.loads(resp.text)
 
+def charge_pay(key, auth_code, email, amount):
+
+    headers = {
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json',
+    }
+
+    data = { "amount": amount,
+            "authorization_code": auth_code, "email": email}
+
+    response = requests.post(
+        f'https://api.paystack.co/transaction/charge_authorization',
+        headers=headers, json=data)
+    print(response.text)
+
+    return response
+
 
 def transaction_success(data):
     payment = Payment.objects.get(reference=data['reference'])

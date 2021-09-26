@@ -150,7 +150,7 @@ class WriteSaleSerializer(serializers.ModelSerializer):
     # product = ProductSerializer(write_only = True)
     class Meta:
         model = Sale
-        exclude = ['client', 'type']
+        exclude = ['client', 'type', 'price']
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -194,14 +194,14 @@ class WriteInstallSalesSerializer(serializers.ModelSerializer):
         exclude = ['next_charge', 'amount_paid', 'status', 'authorization']
 
     def create(self, validated_data,):
+        # product = Product.objects.get(id=validated_data['sale']['product'])
         request = self.context.get('request', None)
         current_user = request.user.id
         quantity = validated_data['sale']['quantity']
         client = current_user
         product = validated_data['sale']['product']
-        price = validated_data['sale']['price']
+        price = product.initial_price * quantity
         status = validated_data['sale']['status']
-        # print(requests.request)
 
         sale = Sale.objects.create(
             client_id = client,
@@ -212,8 +212,6 @@ class WriteInstallSalesSerializer(serializers.ModelSerializer):
         )
         sale.type = sales.INSTALLMENTAL
         sale.save()
-
-        print(sale.id)
 
         # validated_data['sale'].pop('client')
         validated_data.pop('sale')
